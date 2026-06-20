@@ -59,6 +59,7 @@ CareerLens AI is a role-based AI career platform with two separate experiences:
 
 - Students and recruiters can submit feedback from inside the app
 - Captures rating, category, recommendation intent, optional contact, and comments
+- Saves responses to `data/feedback.csv`
 - Shows recent feedback responses with CSV download support for demo review
 
 ### Candidate Shortlist Board
@@ -228,6 +229,8 @@ Recruiter features:
 - SQLAlchemy
 
 The current version includes demo/session-based data for easy local testing. PostgreSQL can be connected for production storage.
+
+Feedback submissions are stored in `data/feedback.csv` for a simple file-based backend.
 
 ---
 

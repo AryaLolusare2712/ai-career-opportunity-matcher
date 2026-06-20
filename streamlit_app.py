@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
@@ -17,6 +18,8 @@ from backend.resume_parser import extract_profile, extract_text_from_upload
 
 load_dotenv()
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+FEEDBACK_COLUMNS = ["submitted_at", "name", "role", "rating", "category", "would_recommend", "contact", "message"]
+FEEDBACK_PATH = Path(__file__).resolve().parent / "data" / "feedback.csv"
 
 
 st.set_page_config(page_title="AI Career Opportunity Matcher", page_icon=":briefcase:", layout="wide")
@@ -514,9 +517,6 @@ def render_feedback_page(role: str, user_name: str) -> None:
     st.subheader("Feedback")
     st.caption("Share what worked well, what felt confusing, or what you want improved.")
 
-    if "feedback_entries" not in st.session_state:
-        st.session_state["feedback_entries"] = []
-
     with st.form("feedback_form", clear_on_submit=True):
         col1, col2 = st.columns([0.45, 0.55])
         with col1:
@@ -551,12 +551,11 @@ def render_feedback_page(role: str, user_name: str) -> None:
             "contact": contact.strip(),
             "message": message.strip(),
         }
-        st.session_state["feedback_entries"].append(entry)
-        st.success("Thanks for your feedback. It has been recorded for this app session.")
+        save_feedback_entry(entry)
+        st.success("Thanks for your feedback. It has been saved.")
 
-    entries = st.session_state.get("feedback_entries", [])
-    if entries:
-        feedback_df = pd.DataFrame(entries)
+    feedback_df = load_feedback_entries()
+    if not feedback_df.empty:
         st.subheader("Recent Feedback")
         col1, col2, col3 = st.columns(3)
         col1.metric("Responses", len(feedback_df))
@@ -572,7 +571,23 @@ def render_feedback_page(role: str, user_name: str) -> None:
             use_container_width=True,
         )
     else:
-        st.info("No feedback submitted yet in this session.")
+        st.info("No feedback submitted yet.")
+
+
+def load_feedback_entries() -> pd.DataFrame:
+    if not FEEDBACK_PATH.exists():
+        return pd.DataFrame(columns=FEEDBACK_COLUMNS)
+    try:
+        return pd.read_csv(FEEDBACK_PATH)
+    except Exception:
+        return pd.DataFrame(columns=FEEDBACK_COLUMNS)
+
+
+def save_feedback_entry(entry: dict) -> None:
+    FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    existing = load_feedback_entries()
+    updated = pd.concat([existing, pd.DataFrame([entry], columns=FEEDBACK_COLUMNS)], ignore_index=True)
+    updated.to_csv(FEEDBACK_PATH, index=False)
 
 
 def get_recruiter_candidates() -> pd.DataFrame:
