@@ -55,6 +55,12 @@ CareerLens AI is a role-based AI career platform with two separate experiences:
 - Existing users can login with demo credentials
 - Portal menu changes based on selected role
 
+### User Feedback Form
+
+- Students and recruiters can submit feedback from inside the app
+- Captures rating, category, recommendation intent, optional contact, and comments
+- Shows recent feedback responses with CSV download support for demo review
+
 ### Candidate Shortlist Board
 
 Recruiters can move candidates through hiring stages:
@@ -180,6 +186,7 @@ Recruiter features:
 - AI candidate summaries
 - Opportunity posting
 - Hiring analytics
+- User feedback collection
 
 ---
 
@@ -375,6 +382,7 @@ recruiter123
 - Resume builder
 - Candidate comparison view
 - AI interview question generator
+- Persistent feedback storage with PostgreSQL
 - Live opportunity scraping
 - LinkedIn/GitHub profile integration
 - Multi-agent recommendation workflow

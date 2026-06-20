@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from io import BytesIO
 
 import pandas as pd
@@ -43,8 +44,8 @@ def main() -> None:
         if role == "Student":
             page = option_menu(
                 "Student Portal",
-                ["Student Home", "Resume Match", "Skill Gaps"],
-                icons=["house", "file-earmark-person", "graph-up-arrow"],
+                ["Student Home", "Resume Match", "Skill Gaps", "Feedback"],
+                icons=["house", "file-earmark-person", "graph-up-arrow", "chat-left-text"],
                 default_index=0,
             )
         else:
@@ -58,8 +59,18 @@ def main() -> None:
                     "AI Summary",
                     "Post Opportunity",
                     "Hiring Analytics",
+                    "Feedback",
                 ],
-                icons=["briefcase", "people", "kanban", "bullseye", "stars", "plus-square", "bar-chart"],
+                icons=[
+                    "briefcase",
+                    "people",
+                    "kanban",
+                    "bullseye",
+                    "stars",
+                    "plus-square",
+                    "bar-chart",
+                    "chat-left-text",
+                ],
                 default_index=0,
             )
 
@@ -68,8 +79,10 @@ def main() -> None:
             render_student_home()
         elif page == "Resume Match":
             render_resume_match()
-        else:
+        elif page == "Skill Gaps":
             render_student_skill_gaps()
+        else:
+            render_feedback_page(role, user_name)
     else:
         if page == "Recruiter Home":
             render_recruiter_home()
@@ -83,8 +96,10 @@ def main() -> None:
             render_ai_candidate_summary()
         elif page == "Post Opportunity":
             render_post_opportunity()
-        else:
+        elif page == "Hiring Analytics":
             render_analytics()
+        else:
+            render_feedback_page(role, user_name)
 
 
 def render_login_page() -> None:
@@ -493,6 +508,71 @@ def render_analytics() -> None:
     with col2:
         fig = px.bar(candidates, x="target_role", y="fit_score", color="status", title="Candidate Pipeline")
         st.plotly_chart(fig, use_container_width=True)
+
+
+def render_feedback_page(role: str, user_name: str) -> None:
+    st.subheader("Feedback")
+    st.caption("Share what worked well, what felt confusing, or what you want improved.")
+
+    if "feedback_entries" not in st.session_state:
+        st.session_state["feedback_entries"] = []
+
+    with st.form("feedback_form", clear_on_submit=True):
+        col1, col2 = st.columns([0.45, 0.55])
+        with col1:
+            rating = st.slider("Overall rating", 1, 5, 4)
+            category = st.selectbox(
+                "Feedback category",
+                ["Overall experience", "Student portal", "Recruiter portal", "Recommendations", "Login/Register", "Other"],
+            )
+        with col2:
+            would_recommend = st.radio("Would you recommend this app?", ["Yes", "Maybe", "No"], horizontal=True)
+            contact = st.text_input("Email or contact info (optional)")
+
+        message = st.text_area(
+            "Your feedback",
+            placeholder="Tell us what to improve or what you liked...",
+            height=140,
+        )
+        submitted = st.form_submit_button("Submit Feedback", type="primary", use_container_width=True)
+
+    if submitted:
+        if not message.strip():
+            st.warning("Please write a short feedback message before submitting.")
+            return
+
+        entry = {
+            "submitted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "name": user_name,
+            "role": role,
+            "rating": rating,
+            "category": category,
+            "would_recommend": would_recommend,
+            "contact": contact.strip(),
+            "message": message.strip(),
+        }
+        st.session_state["feedback_entries"].append(entry)
+        st.success("Thanks for your feedback. It has been recorded for this app session.")
+
+    entries = st.session_state.get("feedback_entries", [])
+    if entries:
+        feedback_df = pd.DataFrame(entries)
+        st.subheader("Recent Feedback")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Responses", len(feedback_df))
+        col2.metric("Average Rating", round(feedback_df["rating"].mean(), 1))
+        col3.metric("Recommend Yes", int((feedback_df["would_recommend"] == "Yes").sum()))
+
+        st.dataframe(feedback_df, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download Feedback CSV",
+            data=feedback_df.to_csv(index=False).encode("utf-8"),
+            file_name="careerlens_feedback.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+    else:
+        st.info("No feedback submitted yet in this session.")
 
 
 def get_recruiter_candidates() -> pd.DataFrame:
